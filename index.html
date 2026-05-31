@@ -1,185 +1,90 @@
 <!DOCTYPE html>
 <html lang="it">
-<head>    
-    <meta charset="UTF-8">    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">    
-    <title>FuelTrack Pro</title>    
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="FuelTrack">
-    <meta name="mobile-web-app-capable" content="yes">
-    
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/481/481224.png">
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/481/481224.png">
-
-    <style>        
-        :root { --ios-blue: #007AFF; --ios-red: #FF3B30; --ios-bg: #F2F2F7; --card-bg: #ffffff; }        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background: var(--ios-bg); 
-            padding: 20px; 
-            color: #1c1c1e;
-            margin: 0;
-            -webkit-font-smoothing: antialiased;
-        }        
-        .card { background: var(--card-bg); padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }        
-        h2 { font-size: 18px; margin-top: 0; color: #000; font-weight: 700; }        
-        input { 
-            width: 100%; 
-            padding: 14px; 
-            margin: 8px 0; 
-            border: 1px solid #d1d1d6; 
-            border-radius: 12px; 
-            box-sizing: border-box; 
-            font-size: 16px; /* Impedisce lo zoom automatico fastidioso su iOS */
-            background: #fafafa;
-        }        
-        input:focus { border-color: var(--ios-blue); outline: none; background: #fff; }
-        button { border: none; padding: 14px; border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 5px; font-size: 16px; }        
-        .btn-main { background: var(--ios-blue); color: white; width: 100%; transition: opacity 0.2s; }        
-        .btn-main:active { opacity: 0.8; }
-        .btn-del { background: #feebeb; color: var(--ios-red); padding: 6px 12px; font-size: 13px; border-radius: 8px; font-weight: 600; }        
-        .btn-del:active { background: #fdd5d5; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }        
-        .stat-box { background: #f8f8f8; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #efefeef0; }    
-        .stat-box strong { font-size: 20px; color: #000; display: block; margin-top: 4px; }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FuelTrack Pro</title>
+    <!-- Tailwind CSS per un design moderno ed elegante -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Chart.js per grafici statistici professionali -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Manifest per rendere l'app installabile sullo smartphone -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
-<body>
+<body class="bg-slate-900 text-slate-100 font-sans antialiased pb-24">
 
-<div class="card" id="dashboard">    
-    <h2>Statistiche Mensili</h2>    
-    <div class="stat-grid">        
-        <div class="stat-box">Spesa <strong id="spesaMese">0 €</strong></div>        
-        <div class="stat-box">Media Consumo <strong id="mediaConsumo">0 km/l</strong></div>    
-    </div>
-</div>
+    <!-- Header statico ed elegante -->
+    <header class="bg-slate-800/50 backdrop-blur-md border-b border-slate-700/50 sticky top-0 z-50 px-4 py-4">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">FuelTrack Pro</h1>
+            <span id="stats-badge" class="text-xs bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20 font-medium">0 km/L Medi</span>
+        </div>
+    </header>
 
-<div class="card">    
-    <h2>Nuovo Rifornimento</h2>    
-    <input type="number" id="prezzo" placeholder="Prezzo €/l (es. 1.784)" step="0.001" inputmode="decimal">    
-    <input type="number" id="euro" placeholder="Euro spesi (es. 50)" step="0.50" inputmode="decimal">    
-    <input type="number" id="kmAttuali" placeholder="Km Totali Cruscotto" inputmode="numeric">    
-    <button class="btn-main" onclick="aggiungiRifornimento()">Salva Rifornimento</button>
-</div>
-
-<div class="card">    
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">        
-        <h2>Storico</h2>        
-        <button onclick="esportaCSV()" style="background:none; color:var(--ios-blue); font-size: 15px; padding:0; margin:0; font-weight:500;">Esporta CSV</button>    
-    </div>    
-    <div id="listaStorico"></div>
-</div>
-
-<script>    
-    let storico = JSON.parse(localStorage.getItem('storicoAuto') || '[]');
-
-    function calcolaStatistiche() {        
-        const adesso = new Date();
-        const meseCorrente = adesso.getMonth();        
-        const annoCorrente = adesso.getFullYear();
+    <main class="max-w-md mx-auto px-4 mt-6 space-y-6">
         
-        const filtri = storico.filter(i => {
-            const d = new Date(i.ts);
-            return d.getMonth() === meseCorrente && d.getFullYear() === annoCorrente;
-        });
-                
-        let totaleEuro = filtri.reduce((acc, i) => acc + i.euro, 0);        
-        let totaleKm = 0;
-        let litriTotali = 0;
+        <!-- Sezione Grafico Dashboard -->
+        <section class="bg-slate-800 border border-slate-700/60 rounded-2xl p-4 shadow-xl">
+            <h2 class="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wider">Andamento Prezzi (€/L)</h2>
+            <div class="h-48 w-full">
+                <canvas id="priceChart"></canvas>
+            </div>
+        </section>
 
-        storico.forEach((item, index) => {
-            const d = new Date(item.ts);
-            if(d.getMonth() === meseCorrente && d.getFullYear() === annoCorrente) {
-                const precedente = storico[index + 1]; 
-                if (precedente) {
-                    totaleKm += (item.km - precedente.km);
-                    litriTotali += (item.euro / item.prezzo);
-                }
-            }
-        });
+        <!-- Form Inserimento Rapido -->
+        <section class="bg-slate-800 border border-slate-700/60 rounded-2xl p-5 shadow-xl">
+            <h2 class="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">Nuovo Rifornimento</h2>
+            <form id="fuel-form" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Prezzo al Litro (€)</label>
+                        <input type="number" id="price" step="0.001" placeholder="1.749" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Spesa Totale (€)</label>
+                        <input type="number" id="total" step="0.01" placeholder="50.00" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Chilometri Attuali Odometro</label>
+                    <input type="number" id="km" placeholder="42000" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 transition">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-950/20 active:scale-[0.98]">
+                    Registra Rifornimento
+                </button>
+            </form>
+        </section>
 
-        document.getElementById('spesaMese').innerText = totaleEuro.toFixed(2) + " €";        
-        document.getElementById('mediaConsumo').innerText = litriTotali > 0 ? (totaleKm / litriTotali).toFixed(1) + " km/l" : "---";    
-    }
+        <!-- Storico Transazioni -->
+        <section class="space-y-3">
+            <div class="flex justify-between items-center px-1">
+                <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Cronologia</h2>
+                <button onclick="exportData()" class="text-xs text-cyan-400 hover:underline">Esporta CSV</button>
+            </div>
+            <div id="log-container" class="space-y-2.5">
+                <!-- I log verranno inseriti qui dinamicamente da app.js -->
+            </div>
+        </section>
+    </main>
 
-    function aggiungiRifornimento() {        
-        const p = parseFloat(document.getElementById('prezzo').value);        
-        const e = parseFloat(document.getElementById('euro').value);        
-        const k = parseFloat(document.getElementById('kmAttuali').value);        
-        
-        if(p && e && k) {            
-            storico.unshift({ts: Date.now(), prezzo: p, euro: e, km: k});            
-            storico.sort((a, b) => b.km - a.km);
-            localStorage.setItem('storicoAuto', JSON.stringify(storico));            
-            
-            document.getElementById('prezzo').value = '';
-            document.getElementById('euro').value = '';
-            document.getElementById('kmAttuali').value = '';
-            
-            render();
-        } else {
-            alert("Per favore, compila tutti i campi.");
-        }    
-    }
+    <!-- Barra di Navigazione Inferiore -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/80 backdrop-blur-lg border-t border-slate-800 py-3 px-6 z-50">
+        <div class="max-w-md mx-auto flex justify-around text-slate-400">
+            <button class="flex flex-col items-center space-y-1 text-emerald-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="text-[10px]">Nuovo</span>
+            </button>
+            <button onclick="clearAllData()" class="flex flex-col items-center space-y-1 hover:text-red-400 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-16v1a3 3 0 003 3h10M4 7h16"></path></svg>
+                <span class="text-[10px]">Reset</span>
+            </button>
+        </div>
+    </nav>
 
-    function elimina(index) {        
-        if(confirm("Vuoi eliminare questo rifornimento dallo storico?")) {            
-            storico.splice(index, 1);            
-            localStorage.setItem('storicoAuto', JSON.stringify(storico));            
-            render();        
-        }    
-    }
-
-    function esportaCSV() {        
-        if(storico.length === 0) return alert("Nessun dato da esportare.");
-        let csv = "Data,Euro,Prezzo al Litro,Km Cruscotto,Km Percorsi,Km_L\n";        
-        storico.forEach((i, index) => {            
-            const prec = storico[index + 1];
-            const kmP = prec ? (i.km - prec.km) : 0;
-            const kml = kmP > 0 ? (kmP / (i.euro / i.prezzo)).toFixed(2) : 0;
-            csv += `${new Date(i.ts).toLocaleDateString()},${i.euro},${i.prezzo},${i.km},${kmP},${kml}\n`;        
-        });        
-        const a = document.createElement('a');        
-        a.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);        
-        a.download = 'storico_carburante.csv';        
-        a.click();    
-    }
-
-    function render() {        
-        const container = document.getElementById('listaStorico');        
-        
-        if (storico.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:#8e8e93; margin: 20px 0;">Nessun rifornimento salvato</p>';
-            document.getElementById('spesaMese').innerText = "0.00 €";
-            document.getElementById('mediaConsumo').innerText = "---";
-            return;
-        }
-
-        container.innerHTML = storico.map((i, index) => {            
-            const prec = storico[index + 1];
-            const kmPercorsi = prec ? (i.km - prec.km) : null;
-            const kmLitro = kmPercorsi ? (kmPercorsi / (i.euro / i.prezzo)).toFixed(1) : null;
-
-            return `                
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid #e5e5ea;">                    
-                    <div>                        
-                        <span style="font-weight:600; font-size:15px;">${new Date(i.ts).toLocaleDateString()}</span> 
-                        <span style="color:#8e8e93; font-size:14px; margin-left:4px;">(${i.euro}€ a ${i.prezzo.toFixed(3)}€/l)</span>
-                        <div style="font-size:13px; color:#636366; margin-top:4px;">
-                            ${kmPercorsi ? `Distanza: <strong>${kmPercorsi} km</strong> | Resa: <strong>${kmLitro} km/l</strong>` : `Primo inserimento (${i.km} km)`}
-                        </div>                    
-                    </div>                    
-                    <button class="btn-del" onclick="elimina(${index})">Elimina</button>                
-                </div>            
-            `;        
-        }).join('');        
-        
-        calcolaStatistiche();    
-    }
-
-    render();
-</script>
+    <script src="app.js"></script>
 </body>
 </html>
